@@ -22,45 +22,117 @@
 using namespace std;
 typedef std::vector<char>     T_araay;
 std::map<string, string> ColumInformation;
-int pNumberCurrentItem = 0, pNumberCurrentItemString = 0, pNumberCurrentItemStringForCheck, pNumberCurrentItemStringCommand=0;                               // индекс символов строки
+typedef std::map<string, map<string, string>> Database;
+int pNumberCurrentItem = 0, pNumberCurrentItemString = 0, pNumberCurrentItemStringForCheck, pNumberCurrentItemStringCommand = 0;                               // индекс символов строки
 char lCurrentItem;                                        // поточный елемент в строке
-string  lString1, lString2, lString3, NameVariable;// раздичные переменные которые используем для проверки команды на правильную структуру
-char lTolowerBuffer[255];                                      // выведенный буфер
+string  lTolowerComand, lNameTable, lComand;// раздичные переменные которые используем для проверки команды на правильную структуру
+string  NameVariable; //то куда мы записываем имя таблицы
+string  TypeOfData; //то куда мы записываем тип данных таблицы
 string lTolowerBufferString;//строка в которую будем записивать буфер для проверки на последний елемент
+char buffer[255];
+std::string pBufferWithoutSpace;
 string** database;
-int NumberColumn=1;
+int NumberColumn = 1;
 int lQuantityOfDatabaseElements = 0;
-bool NameColumn=1;
+bool NameColumn = 1;
 bool ColumnExistence = 0;
-typedef std::map<string, string> ColumnStructure;//конструктор который имеет в себе имя самого столбца и тип данных который он сохраняет
-typedef std::map<string, ColumnStructure> Database;//база данных всех бд что у нас существуют, где 1 колонка ето имя бд с которой взят стобец, вторая ето имя самого столбца и 3 тип данных
-typedef std::map<int, string> NameOfDatabase;//конструктор всех существующих базданных
+bool pBoolForInsert = 1;
+string lTolowerCommand;// Строка в которую записиваем значения переведенной команды
+char lTolowerCommandElementChar;// перменная в которую мы записиваем елемент команды
+Database AllDatabases;//база данных всех бд что у нас существуют, где 1 колонка ето имя бд с которой взят стобец, вторая ето имя самого столбца и 3 тип данных * так было задумано, но чет пошло не так, поетому прийдеться создавать 2 мапа
+string lFullCommand = "";
+string pFullCommand = "";
 
-string** RequestMemory(int pNumberOfLines, int pNumberOfColumns)
+//////////////////////////////////////////////////////////////////////////////////////////
+void CreateTable()
 {
-    string** arr = (string**)malloc(pNumberOfLines * sizeof(string*));
-    for (int i = 0; i < pNumberOfLines; i++)
-        arr[i] = (string*)malloc(pNumberOfColumns * sizeof(string));
-    return arr;
+
 }
-void AnalizArgumentsOfComand(string pComand)
+void AnalizArgumentsOfComandCreate(string pComand)
 {
-    while (pComand[pNumberCurrentItemStringCommand])// пока не конец строки
+    while (pComand[pNumberCurrentItemStringCommand+1])// пока не конец строки
     {
-        if (pComand[pNumberCurrentItemStringCommand] != ' ' && NameColumn)
+        if (pComand[pNumberCurrentItemStringCommand ] != ' ' && NameColumn && pComand[pNumberCurrentItemStringCommand] != ',')
         {
-            NameVariable = NameVariable + pComand[pNumberCurrentItemStringCommand];
-            if (pComand[pNumberCurrentItemStringCommand+1] == ' ' )
+            if (pComand[pNumberCurrentItemStringCommand] == ')')
             {
-                cout << "Column number " << NumberColumn << " has this name " << NameVariable << endl;
-                NumberColumn++;
-                NameColumn = 0;
+                cout << "we end read comand!" << endl;
+                break;
+            }
+            NameVariable = NameVariable + pComand[pNumberCurrentItemStringCommand];
+            if (pComand[pNumberCurrentItemStringCommand + 1] == ' ' || pComand[pNumberCurrentItemStringCommand + 1] == ',' || pComand[pNumberCurrentItemStringCommand + 1] == ')')
+            {
+                if      (pComand[pNumberCurrentItemStringCommand + 1] == ' ')
+                {
+                    cout << "Column number " << NumberColumn << " has this name " << NameVariable;
+                    NumberColumn++;
+                    NameColumn = 0;
+                    NameVariable.clear();
+                    ColumnExistence = 1;
+                }
+                else if (pComand[pNumberCurrentItemStringCommand + 1] == ','|| pComand[pNumberCurrentItemStringCommand + 1] == ')')
+                {
+                    cout << "Column number " << NumberColumn << " has this name " << NameVariable << endl;
+                    NumberColumn++;
+                    NameVariable.clear();
+                    ColumnExistence = 1;
+                }
+            }
+        }
+        else if (!NameColumn)
+        {
+            if      (pComand[pNumberCurrentItemStringCommand + 1] != ',' && pComand[pNumberCurrentItemStringCommand] != ' ')
+            {
+                TypeOfData = TypeOfData + pComand[pNumberCurrentItemStringCommand];
+            }
+            else if (pComand[pNumberCurrentItemStringCommand + 1] == ',' && pComand[pNumberCurrentItemStringCommand] == ' ')
+            {
+                cout << " ,type of data is " << TypeOfData << endl;
+                NameColumn = 1;
                 ColumnExistence = 1;
             }
         }
         pNumberCurrentItemStringCommand++;
     }
 }
+//////////////////////////////////////////////////////////////////////////////////////////
+void AnalizArgumentsOfComandInsert(string pComand, string pNameTable)
+{
+    while (pComand[pNumberCurrentItemStringCommand + 1])// пока не конец строки
+    {
+        if (pComand[pNumberCurrentItemStringCommand] != ' ' && NameColumn && pComand[pNumberCurrentItemStringCommand] != ',')
+        {
+            if (pComand[pNumberCurrentItemStringCommand] == ')')
+            {
+                cout << "We end read comand!" << endl;
+                break;
+            }
+            if (pComand[pNumberCurrentItemStringCommand] != '"')
+            {
+                NameVariable = NameVariable + pComand[pNumberCurrentItemStringCommand];
+                if (pComand[pNumberCurrentItemStringCommand + 1] == ' ' || pComand[pNumberCurrentItemStringCommand + 1] == ',' || pComand[pNumberCurrentItemStringCommand + 1] == ')' || pComand[pNumberCurrentItemStringCommand + 1] == '\"')
+                {
+                    if (pComand[pNumberCurrentItemStringCommand + 1] == '\"')
+                    {
+                        cout << "You insert in table " << pNameTable << "; column number " << NumberColumn << " has this value " << NameVariable << endl;
+                        NumberColumn++;
+                        NameVariable.clear();
+                        ColumnExistence = 1;
+                    }
+                    else if (pComand[pNumberCurrentItemStringCommand + 1] == '\"' && (pComand[pNumberCurrentItemStringCommand + 2] == ',' || pComand[pNumberCurrentItemStringCommand + 2] == ')' || pComand[pNumberCurrentItemStringCommand + 3] == ',' || pComand[pNumberCurrentItemStringCommand + 3] == ')'))
+                    {
+                        cout << "You insert in table " << pNameTable << "; column number " << NumberColumn << " has this value " << NameVariable << endl;
+                        NumberColumn++;
+                        NameVariable.clear();
+                        ColumnExistence = 1;
+                    }
+                }
+            }
+        }
+        pNumberCurrentItemStringCommand++;
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////
 bool HellperChek(char c)
 {
     switch (c)
@@ -106,67 +178,91 @@ bool HellperChek(char c)
         return false;
     }
 }
+
 int check(string pComandString)
 {
     // Массив строк типа string
     // 1. Инициализация массива строк указанием размера массива
     const int lNumberOfCommands = 9;
-    string lCommands[lNumberOfCommands] = { "create", "indexed", "insert",
+    string lCommands[lNumberOfCommands] = { "create", "insert", "indexed",
     "select", "where", "left_join", "full_join","join","order_by" };
 
     for (int pNumberOfCommands = 0; pNumberOfCommands < lNumberOfCommands; pNumberOfCommands++) // Проверка на то являеться ли полученая строка одной из команд. если да то выполняем действия етой команды
     {
-        if (pComandString == lCommands[0])
+        if      (pComandString == lCommands[0])//команда Create
         {
             cout << "Create your table" << endl;
-            while (lTolowerBuffer[pNumberCurrentItemString])                           // пока не конец буфера
+            while (lFullCommand[pNumberCurrentItemString])                           // пока не конец буфера
             {
-                std::string lTolowerBufferString(lTolowerBuffer);
-                char endch = lTolowerBufferString.back();
+                char endch = lFullCommand[lFullCommand.size() - 2];
                 if (endch != ';')
                 {
                     cout << "Вы не закончили команду с помощью символа ';'!" << endl;
-                    goto breakEndCommandError;
                 }
-                if (lTolowerBuffer[pNumberCurrentItemString] != ' ')
+                if (lFullCommand[pNumberCurrentItemString] != ' ')
                 {
-                    lString2 = lString2 + lTolowerBuffer[pNumberCurrentItemString];
-                    if (lTolowerBuffer[pNumberCurrentItemString + 1] == ' ' || lTolowerBuffer[pNumberCurrentItemString + 1] == '\0' || lTolowerBuffer[pNumberCurrentItemString + 1] == '(' && !HellperChek(lTolowerBuffer[pNumberCurrentItemString + 1]))
+                    lNameTable = lNameTable + lFullCommand[pNumberCurrentItemString];
+                    if (lFullCommand[pNumberCurrentItemString + 1] == ' ' || lFullCommand[pNumberCurrentItemString + 1] == '\0' || lFullCommand[pNumberCurrentItemString + 1] == '(' && !HellperChek(lFullCommand[pNumberCurrentItemString + 1]))
                     {
-                        cout << "The name of your table is " << lString2 << endl;
+                        cout << "The name of your table is " << lNameTable << endl;
 
                         lQuantityOfDatabaseElements++;
 
-                        if (lTolowerBuffer[pNumberCurrentItemString + 1] == '\0')
+                        if (lFullCommand[pNumberCurrentItemString + 1] == '\0')
                         {
                             return 0;
                         }
-                        if (lTolowerBuffer[pNumberCurrentItemString + 1] == '(')
+                        if (lFullCommand[pNumberCurrentItemString + 1] == '(' || lFullCommand[pNumberCurrentItemString + 2] == '(')
                         {
-                            pNumberCurrentItemStringForCheck = pNumberCurrentItemString + 1+1;
-                            while (lTolowerBuffer[pNumberCurrentItemStringForCheck])                           // пока не конец буфера
+                            if      (lFullCommand[pNumberCurrentItemString + 1] == '(')
                             {
-                                if (lTolowerBuffer[pNumberCurrentItemStringForCheck] != ',')
+                                pNumberCurrentItemStringForCheck = pNumberCurrentItemString + 2;
+                                while (lFullCommand[pNumberCurrentItemStringForCheck])                           // пока не конец нашей команды
                                 {
-                                    lString3 = lString3 + lTolowerBuffer[pNumberCurrentItemStringForCheck];
-                                    if (lTolowerBuffer[pNumberCurrentItemStringForCheck + 1] == ',' || lTolowerBuffer[pNumberCurrentItemStringForCheck + 1] == ')' )
+                                    if (lFullCommand[pNumberCurrentItemStringForCheck] != ';')
                                     {
-                                        cout << lString3 <<endl;
-                                        AnalizArgumentsOfComand(lString3);
-                                        if (ColumnExistence == 0)
+                                        lComand = lComand + lFullCommand[pNumberCurrentItemStringForCheck];
+                                        if (lFullCommand[pNumberCurrentItemStringForCheck] == ')')
                                         {
-                                            cout << "Вы не добавили никаких столбцов в таблицу!" << endl;
-                                            goto breakColumnExistence;
+                                            cout << lComand << endl;
+                                            AnalizArgumentsOfComandCreate(lComand);
+                                            if (ColumnExistence == 0)
+                                            {
+                                                cout << "Вы не добавили никаких столбцов в таблицу!" << endl;
+                                            }
+                                            if (lNameTable == "")
+                                            {
+                                                cout << "Вы не указали имя таблицы!" << endl;
+                                            }
                                         }
-                                        if (lString2 == "")
-                                        {
-                                            cout << "Вы не указали имя таблицы!" << endl;
-                                            goto breakNoTableName;
-                                        }
-                                        goto breakAll;
                                     }
+                                    pNumberCurrentItemStringForCheck++;
                                 }
-                                pNumberCurrentItemStringForCheck++;
+                            }
+                            else if (lFullCommand[pNumberCurrentItemString + 2] == '(')
+                            {
+                                pNumberCurrentItemStringForCheck = pNumberCurrentItemString + 3;
+                                while (lFullCommand[pNumberCurrentItemStringForCheck])                           // пока не конец нашей команды
+                                {
+                                    if (lFullCommand[pNumberCurrentItemStringForCheck] != ';')
+                                    {
+                                        lComand = lComand + lFullCommand[pNumberCurrentItemStringForCheck];
+                                        if (lFullCommand[pNumberCurrentItemStringForCheck] == ')')
+                                        {
+                                            cout << lComand << endl;
+                                            AnalizArgumentsOfComandCreate(lComand);
+                                            if (ColumnExistence == 0)
+                                            {
+                                                cout << "Вы не добавили никаких столбцов в таблицу!" << endl;
+                                            }
+                                            if (lNameTable == "")
+                                            {
+                                                cout << "Вы не указали имя таблицы!" << endl;
+                                            }
+                                        }
+                                    }
+                                    pNumberCurrentItemStringForCheck++;
+                                }
                             }
                         }
                     }
@@ -174,9 +270,80 @@ int check(string pComandString)
                 pNumberCurrentItemString++;
             }
         }
-        else if (pComandString == lCommands[1])
+        else if (pComandString == lCommands[1])//команда Insert
         {
+            cout << "Insert into your table!" << endl;
+            while (lFullCommand[pNumberCurrentItemString])                           // пока не конец буфера
+            {
+                char endch = lFullCommand[lFullCommand.size() - 2];
+                if (endch != ';')
+                {
+                    cout << "Вы не закончили команду с помощью символа ';'!" << endl;
+                }
+                if (lFullCommand[pNumberCurrentItemString] != ' ')
+                {
+                    lNameTable = lNameTable + lFullCommand[pNumberCurrentItemString];
+                    if (lFullCommand[pNumberCurrentItemString + 1] == ' ' || lFullCommand[pNumberCurrentItemString + 1] == '\0' || lFullCommand[pNumberCurrentItemString + 1] == '(' && !HellperChek(lFullCommand[pNumberCurrentItemString + 1]))
+                    {
+                        cout << "The name table in which you insert data is " << lNameTable << endl;
 
+                        lQuantityOfDatabaseElements++;
+
+                        if (lFullCommand[pNumberCurrentItemString + 1] == '\0')
+                        {
+                            return 0;
+                        }
+                        if (lFullCommand[pNumberCurrentItemString + 1] == '(' || lFullCommand[pNumberCurrentItemString + 2] == '(')
+                        {
+                            if (lFullCommand[pNumberCurrentItemString + 1] == '(')
+                            {
+                                pNumberCurrentItemStringForCheck = pNumberCurrentItemString + 2;
+                                while (lFullCommand[pNumberCurrentItemStringForCheck])                           // пока не конец нашей команды
+                                {
+                                    if (lFullCommand[pNumberCurrentItemStringForCheck] != ';')
+                                    {
+                                        lComand = lComand + lFullCommand[pNumberCurrentItemStringForCheck];
+                                        if (lFullCommand[pNumberCurrentItemStringForCheck] == ')')
+                                        {
+                                            cout << lComand << endl;
+                                            AnalizArgumentsOfComandInsert(lComand, lNameTable);
+                                            if (lNameTable == "")
+                                            {
+                                                cout << "Вы не указали имя таблицы куда будут записыватся данные!" << endl;
+                                            }
+                                            return 0;
+                                        }
+                                    }
+                                    pNumberCurrentItemStringForCheck++;
+                                }
+                            }
+                            else if (lFullCommand[pNumberCurrentItemString + 2] == '(')
+                            {
+                                pNumberCurrentItemStringForCheck = pNumberCurrentItemString + 3;
+                                while (lFullCommand[pNumberCurrentItemStringForCheck])                           // пока не конец нашей команды
+                                {
+                                    if (lFullCommand[pNumberCurrentItemStringForCheck] != ';')
+                                    {
+                                        lComand = lComand + lFullCommand[pNumberCurrentItemStringForCheck];
+                                        if (lFullCommand[pNumberCurrentItemStringForCheck] == ')')
+                                        {
+                                            cout << lComand << endl;
+                                            AnalizArgumentsOfComandInsert(lComand, lNameTable);
+                                            if (lNameTable == "")
+                                            {
+                                                cout << "Вы не указали имя таблицы куда будут записыватся данные!" << endl;
+                                            }
+                                            return 0;
+                                        }
+                                    }
+                                    pNumberCurrentItemStringForCheck++;
+                                }
+                            }
+                        }
+                    }
+                }
+                pNumberCurrentItemString++;
+            }
         }
         else if (pComandString == lCommands[2])
         {
@@ -203,61 +370,52 @@ int check(string pComandString)
 
         }
     }
-breakAll:
-    {        
-        puts("I'm finish analiz your comand!");
-    }
-breakEndCommandError:
-    {
-        puts("End command error!");
-    }
-breakColumnExistence:
-    {
-        puts("Column existence error!");
-    }
-breakNoTableName:
-    {
-        puts("No table name");
-    }
 }
+int pIndex;
 void AnaliseComand(char buffer[255])//функцыя анализа нашей строки
 {
-    // Перебираем каждый символ, который ввел пользователь
-    for (int index = 0; index < strlen(buffer); ++index)         // Делаем вс
-    {
-        while (buffer[pNumberCurrentItem])                           // пока не конец буфера
+        while (buffer[pNumberCurrentItemString] && true)                           // пока не конец буфера проверяем нашу строку на возможные команды
         {
-            lCurrentItem = buffer[pNumberCurrentItem];
-            lTolowerBuffer[pNumberCurrentItem] = tolower(lCurrentItem);//переводим всю строку в маленькие буквы для 100% коректного понимания програмы того что мы ввели 
-            pNumberCurrentItem++;
-            if (pNumberCurrentItem == strlen(buffer))
+            if (buffer[pNumberCurrentItemString] != ' ')//пока не встретим пробел записуем елемент в строку и потом проверяем является ли ето одной из возможных команд
             {
-                lCurrentItem = buffer[pNumberCurrentItem];
-                lTolowerBuffer[pNumberCurrentItem] = tolower(lCurrentItem);
-                lTolowerBuffer[pNumberCurrentItem + 1] = '\0';
-                std::cout << lTolowerBuffer << endl;
-            }
-        }
-    }
-    for (int pIndex = 0; pIndex < strlen(lTolowerBuffer); ++pIndex)
-    {
-        while (lTolowerBuffer[pNumberCurrentItemString])                           // пока не конец буфера проверяем нашу строку на возможные команды
-        {
-
-            if (lTolowerBuffer[pNumberCurrentItemString] != ' ')//пока не встретим пробел записуем елемент в строку и потом проверяем является ли ето одной из возможных команд
-            {
-                lString1 = lString1 + lTolowerBuffer[pNumberCurrentItemString];
-                if (lTolowerBuffer[pNumberCurrentItemString + 1] == ' ')
+                lTolowerComand = lTolowerComand + buffer[pNumberCurrentItemString];
+                if (buffer[pNumberCurrentItemString + 1] == ' ')
                 {
+                    for (int index = 0; index < lTolowerComand.length(); ++index)         // меняем регистр именно для команды
+                    {
+                        while (lTolowerComand[pNumberCurrentItem])                           // пока не конец строки в которую записали команду
+                        {
+                            lCurrentItem = lTolowerComand[pNumberCurrentItem];
+                            lTolowerCommandElementChar = tolower(lCurrentItem);
+                            lTolowerCommand = lTolowerCommand + lTolowerCommandElementChar;//переводим всю строку в маленькие буквы для 100% коректного понимания програмы того что мы ввели
+                            pNumberCurrentItem++;
+                            if (pNumberCurrentItem == lTolowerComand.length())
+                            {
+                                lCurrentItem = lTolowerComand[pNumberCurrentItem];
+                                lTolowerCommandElementChar = tolower(lCurrentItem);
+                                lFullCommand = lTolowerCommand; // переводим команду в маленькие буквы для 100 % коректного понимания програмы того что мы ввели
+                                std::cout << lTolowerCommand << endl;
+                                pIndex = pNumberCurrentItemString + 1;
+                                break;
+                            }
+                        }
+                        if (pNumberCurrentItem == lTolowerComand.length()) break;
+                    }
+                    for (pIndex; pIndex <= strlen(buffer); pIndex++)
+                    {
+                        pFullCommand = pFullCommand + buffer[pIndex];
+                    }
                     pNumberCurrentItemString++;
-                    check(lString1);
+                    std::regex twoormorespaces(" [ ]+");
+                    lFullCommand = lFullCommand + " " + pFullCommand;
+                    cout << "Наша команда после обработки: " << endl << std::regex_replace(lFullCommand, twoormorespaces, " ") << endl;
+                    pNumberCurrentItemString = size(lTolowerCommand);
+                    check(lTolowerCommand);//добавить к толовер команд значения что идут после в буфере, что бы оно могло норм обработать их
+                    break;
                 }
             }
             pNumberCurrentItemString++;
-
         }
-    }
-
 }
 int main()
 {
@@ -268,8 +426,8 @@ int main()
     // Просим пользователя ввести строку
     char buffer[255];
     std::cout << "Enter a string: ";
-    std::cin.getline(buffer, 255);//записиваем строку в буфер
-    AnaliseComand(buffer);//анализируем буфер
+    std::cin.getline(buffer, 255);//записиваем то что мы вводили в командную строку в буфер
+    AnaliseComand(buffer);//анализируем наш буфер
 }
 
 
